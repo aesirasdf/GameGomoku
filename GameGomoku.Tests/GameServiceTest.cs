@@ -9,7 +9,6 @@ namespace GameGomoku.Tests
     public sealed class GameServiceTests
     {
         private readonly IGameService _gameService;
-        private const int ConnectedFiveRows = 4;
 
         public GameServiceTests()
         {

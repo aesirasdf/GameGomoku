@@ -21,6 +21,12 @@ namespace GameGomoku.Services
         public async Task<APIResponse> CreateBoard(int columnSize, int rowSize, int startingPlayer)
         {
             var apiResponse = new APIResponse();
+            if (!(startingPlayer.Equals(1) || startingPlayer.Equals(2))) {
+                apiResponse.Ok = false;
+                apiResponse.Message = GlobalConstants.InvalidStartingPlayer;
+                apiResponse.Result = GlobalConstants.Invalid;
+                return apiResponse;
+            }
             int[,] intersections = new int[columnSize, rowSize];
             for(int col = 0; col < intersections.GetLength(0); col++)
             {
@@ -50,7 +56,7 @@ namespace GameGomoku.Services
         /// <param name="row"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public async Task<APIResponse> CreateStone(int column, int row)
+        public async Task<APIResponse> CreateStone(int row, int column)
         {
             var apiResponse = new APIResponse();
             apiResponse.Ok = false;
@@ -61,20 +67,20 @@ namespace GameGomoku.Services
                 return apiResponse;
             }
             try {
-                var columnSize = board.Intersections?.GetLength(0);
-                var rowSize = board.Intersections?.GetLength(1);
+                var rowSize = board.Intersections?.GetLength(0);
+                var columnSize = board.Intersections?.GetLength(1);
 
 
                 var player = new Player();
                 player.Id = board.CurrentPlayerId;
                 player.Name = board.CurrentPlayerId == 1 ? GlobalConstants.PlayerOne : GlobalConstants.PlayerTwo;
                 player.Color = board.CurrentPlayerId == 1 ? GlobalConstants.PlayerOneColor : GlobalConstants.PlayerTwoColor;
-                player.Column = column;
                 player.Row = row;
+                player.Column = column;
 
-                if(column < columnSize && row < rowSize && column >= 0 && row >= 0)
+                if(row < rowSize && column < columnSize && row >= 0 && column >= 0)
                 {
-                    var intersection = board.Intersections?[column, row];
+                    var intersection = board.Intersections?[row, column];
                     if (!intersection.Equals(0)) {
                         apiResponse.Message = GlobalConstants.StoneAlreadyExists;
                         apiResponse.Result = GlobalConstants.Invalid;
@@ -88,14 +94,14 @@ namespace GameGomoku.Services
                     }
                     else
                     {
-                        board.Intersections[column, row] = board.CurrentPlayerId;
-                        board.GameStatus = CheckGameStatus(board.Intersections, column, row);
+                        board.Intersections[row, column] = board.CurrentPlayerId;
+                        board.GameStatus = CheckGameStatus(board.Intersections, row, column);
                         apiResponse.Ok = true;
                         switch (board.GameStatus)
                         {
                             case 0:
                                 board.CurrentPlayerId = board.CurrentPlayerId == 1 ? 2 : 1;
-                                apiResponse.Message = $"{player.Name} took his turn and placed a {player.Color} stone in column: {player.Column} Row: {player.Row}.";
+                                apiResponse.Message = $"{player.Name} took his turn and placed a {player.Color} stone in Row: {player.Row} column: {player.Column}.";
                                 apiResponse.Result = GlobalConstants.NextTurn;
                                 break;
                             case 1:
@@ -124,14 +130,14 @@ namespace GameGomoku.Services
             }
             return apiResponse;
         }
-
+        
         #region Private Methods
-        private bool CheckChainedIntersection(int[,] intersections, int currentCol, int currentRow, int checkCol, int checkRow)
+        private bool CheckChainedIntersection(int[,] intersections, int currentRow, int currentCol, int equateRow, int equateCol)
         {
-            int currentIntersection = intersections[currentCol, currentRow];
-            int checkingIntersection = intersections[checkCol, checkRow];
+            int currentIntersection = intersections[currentRow, currentCol];
+            int equateIntersection = intersections[equateRow, equateCol];
 
-            if (!currentIntersection.Equals(0) && currentIntersection.Equals(checkingIntersection))
+            if (!currentIntersection.Equals(0) && currentIntersection.Equals(equateIntersection))
             {
                 return true;
             }
@@ -139,14 +145,14 @@ namespace GameGomoku.Services
             return false;
         }
 
-        private bool ValidateWinningChain(int NumberOfChainedStones) => (NumberOfChainedStones >= GlobalConstants.NumberOfStoneToWin);
+        private bool ValidateWinningChain(int NumberOfChainedStones) => GlobalConstants.AllowOverlineWin ? NumberOfChainedStones >= GlobalConstants.NumberOfStoneToWin : NumberOfChainedStones == GlobalConstants.NumberOfStoneToWin;
 
-        private bool CheckHorizontalIntersection(int[,] intersections, int col, int row)
+        private bool CheckHorizontalIntersection(int[,] intersections, int row, int col)
         {
             int NumberOfChainedStones = 1;
-            for (int i = col + 1; i < intersections.GetLength(0); i++)
+            for (int i = col + 1; i < intersections.GetLength(1); i++)
             {
-                if (CheckChainedIntersection(intersections, col, row, i, row)){
+                if (CheckChainedIntersection(intersections, row, col, row, i)){
                     NumberOfChainedStones++;
                     continue;
                 }
@@ -155,7 +161,7 @@ namespace GameGomoku.Services
 
             for (int i = col - 1; i >= 0; i--)
             {
-                if (CheckChainedIntersection(intersections, col, row, i, row)){
+                if (CheckChainedIntersection(intersections, row, col, row, i)){
                     NumberOfChainedStones++;
                     continue;
                 }
@@ -165,12 +171,12 @@ namespace GameGomoku.Services
             return ValidateWinningChain(NumberOfChainedStones);
         }
 
-        private bool CheckVerticalIntersection(int[,] intersections, int col, int row)
+        private bool CheckVerticalIntersection(int[,] intersections, int row, int col)
         {
             int NumberOfChainedStones = 1;
-            for (int i = row + 1; i < intersections.GetLength(1); i++)
+            for (int i = row + 1; i < intersections.GetLength(0); i++)
             {
-                if (CheckChainedIntersection(intersections, col, row, col, i)){
+                if (CheckChainedIntersection(intersections, row, col, i, col)){
                     NumberOfChainedStones++;
                     continue;
                 }
@@ -179,7 +185,7 @@ namespace GameGomoku.Services
 
             for (int i = row - 1; i >= 0; i--)
             {
-                if (CheckChainedIntersection(intersections, col, row, col, i)){
+                if (CheckChainedIntersection(intersections, row, col, i, col)){
                     NumberOfChainedStones++;
                     continue;
                 }
@@ -189,14 +195,14 @@ namespace GameGomoku.Services
             return ValidateWinningChain(NumberOfChainedStones);
         }
 
-        private bool CheckDiagonalLeftToRightIntersection(int[,] intersections, int col, int row)
+        private bool CheckDiagonalLeftToRightIntersection(int[,] intersections, int row, int col)
         {
             int NumberOfChainedStones = 1;
 
 
-            for(int i = col + 1, j = row + 1; i < intersections.GetLength(0) && j < intersections.GetLength(1); i++, j++)
+            for(int i = row + 1, j = col + 1; i < intersections.GetLength(0) && j < intersections.GetLength(1); i++, j++)
             {
-                if(CheckChainedIntersection(intersections, col, row, i, j))
+                if(CheckChainedIntersection(intersections, row, col, i, j))
                 {
                     NumberOfChainedStones++;
                     continue;
@@ -204,9 +210,9 @@ namespace GameGomoku.Services
                 break;
             }
 
-            for (int i = col - 1, j = row - 1; i >= 0 && j >= 0; i--, j--)
+            for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--)
             {
-                if (CheckChainedIntersection(intersections, col, row, i, j))
+                if (CheckChainedIntersection(intersections, row, col, i, j))
                 {
                     NumberOfChainedStones++;
                     continue;
@@ -218,13 +224,13 @@ namespace GameGomoku.Services
         }
 
 
-        private bool CheckDiagonalRightToLeftIntersection(int[,] intersections, int col, int row)
+        private bool CheckDiagonalRightToLeftIntersection(int[,] intersections, int row, int col)
         {
             int NumberOfChainedStones = 1;
 
-            for (int i = row + 1, j = col - 1; i < intersections.GetLength(1) && j > 0; i++, j--)
+            for (int i = row + 1, j = col - 1; i < intersections.GetLength(0) && j > 0; i++, j--)
             {
-                if (CheckChainedIntersection(intersections, col, row, i, j))
+                if (CheckChainedIntersection(intersections, row, col, i, j))
                 {
                     NumberOfChainedStones++;
                     continue;
@@ -232,9 +238,9 @@ namespace GameGomoku.Services
                 break;
             }
 
-            for (int i = row - 1, j = col + 1; i >= 0 && j < intersections.GetLength(0); i--, j++)
+            for (int i = row - 1, j = col + 1; i >= 0 && j < intersections.GetLength(1); i--, j++)
             {
-                if (CheckChainedIntersection(intersections, col, row, i, j))
+                if (CheckChainedIntersection(intersections, row, col, i, j))
                 {
                     NumberOfChainedStones++;
                     continue;
@@ -245,13 +251,13 @@ namespace GameGomoku.Services
             return ValidateWinningChain(NumberOfChainedStones);
         }
 
-        private bool CheckWinningMove(int[,] intersections, int col, int row)
+        private bool CheckWinningMove(int[,] intersections, int row, int col)
         {
             if(
-                CheckDiagonalLeftToRightIntersection(intersections, col, row) ||
-                CheckDiagonalRightToLeftIntersection(intersections, col, row) ||
-                CheckHorizontalIntersection(intersections, col, row) ||
-                CheckVerticalIntersection(intersections, col, row)
+                CheckDiagonalLeftToRightIntersection(intersections, row, col) ||
+                CheckDiagonalRightToLeftIntersection(intersections, row, col) ||
+                CheckHorizontalIntersection(intersections, row, col) ||
+                CheckVerticalIntersection(intersections, row, col)
             )
             {
                 return true;
@@ -272,9 +278,9 @@ namespace GameGomoku.Services
             }
             return true;
         }
-        private int CheckGameStatus(int[,] intersections, int col, int row)
+        private int CheckGameStatus(int[,] intersections, int row, int col)
         {
-            if (CheckWinningMove(intersections, col, row))
+            if (CheckWinningMove(intersections, row, col))
             {
                 return 1;
             }

@@ -16,26 +16,28 @@ namespace GameGomoku.Controllers
         }
 
         [HttpPost]
-        [Route("Board")]
-        public async Task<IActionResult> CreateBoard(int startingPlayer = 1)
+        [Route("CreateBoard")]
+        public async Task<IActionResult> Board(int startingPlayer = 1)
         {
             var response = new APIResponse();
-            if (startingPlayer.Equals(1) || startingPlayer.Equals(2))
+            response = await _gameService.CreateBoard(15, 15, startingPlayer);
+            switch (response.Result)
             {
-                response = await _gameService.CreateBoard(15, 15, startingPlayer);
-                return new OkObjectResult(response);
+                case GlobalConstants.Success:
+                    return new OkObjectResult(response);
+                case GlobalConstants.Invalid:
+                    return new BadRequestObjectResult(response);
+                default:
+                    return new OkObjectResult(response);
             }
-            response.Message = GlobalConstants.InvalidStartingPlayer;
-            response.Result = GlobalConstants.Invalid;
-            return new BadRequestObjectResult(response);
         }
 
 
         [HttpPost]
-        [Route("Stone")]
-        public async Task<IActionResult> Stone(int column, int row)
+        [Route("CreateStone")]
+        public async Task<IActionResult> Stone(int row, int column)
         {
-            var response = _gameService.CreateStone(column, row).Result;
+            var response = await _gameService.CreateStone(row, column);
             switch (response.Result)
             {
                 case GlobalConstants.GameEnded:

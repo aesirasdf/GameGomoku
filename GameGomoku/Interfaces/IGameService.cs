@@ -4,7 +4,7 @@ namespace GameGomoku.Interfaces
 {
     public interface IGameService
     {
-        Task<APIResponse> CreateBoard(int columnSize, int rowSize, int startingPlayer);
+        Task<APIResponse> CreateBoard(int rowSize, int columnSize, int startingPlayer);
         Task<APIResponse> CreateStone(int row, int column);
     }
 }

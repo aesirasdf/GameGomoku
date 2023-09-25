@@ -5,15 +5,17 @@
         //  MESSAGES
         public const string BoardNotExist = "You have to create a board first!";
         public const string BoardCreated = "Board has been created.";
+        public const string BoardRetrieved = "Board has been retrieved.";
         public const string GameAlreadyEnded = "You can't place a stone, the game already ended!";
         public const string StoneCreated = "Stone has been placed.";
         public const string StoneOutOfBounds = "You can't place a stone outside the board!";
-        public const string StoneAlreadyExists = "There's already a stone in this tile!";
+        public const string StoneAlreadyExists = "There's already a stone in this intersection!";
         public const string NoPossibleMoves = "Game ended as a draw. There's no more possible moves.";
         public const string InvalidStartingPlayer = "Starting player id should only be either 1 or 2";
 
         //  GAME RULE CONSTANTS
         public const int NumberOfStoneToWin = 5;
+        public const bool AllowOverlineWin = true;
 
         //  PLAYER CONSTANTS
         public const string PlayerOne = "Player 1";

@@ -16,7 +16,7 @@ namespace GameGomoku.Tests
         }
 
         [Test]
-        public void ShouldSuccessWhenThereIsWinner()
+        public void ShouldSuccessWhenPlayerOneWins()
         {
             _ = _gameService.CreateBoard(15, 15, 1).Result;
             _ = _gameService.CreateStone(1, 1).Result;
@@ -32,6 +32,26 @@ namespace GameGomoku.Tests
             Assert.That(response, Is.Not.Null);
             Assert.That(response.Ok, Is.EqualTo(true));
             Assert.That(response.Message, Is.EqualTo("Player 1 with Black stone wins"));
+            Assert.That(response.Result, Is.EqualTo(GlobalConstants.GameEnded));
+        }
+
+        [Test]
+        public void ShouldSuccessWhenPlayerTwoWins()
+        {
+            _ = _gameService.CreateBoard(15, 15, 2).Result;
+            _ = _gameService.CreateStone(1, 1).Result;
+            _ = _gameService.CreateStone(9, 7).Result; // player 1's turn
+            _ = _gameService.CreateStone(1, 2).Result;
+            _ = _gameService.CreateStone(8, 1).Result; // player 1's turn
+            _ = _gameService.CreateStone(1, 3).Result;
+            _ = _gameService.CreateStone(3, 14).Result; // player 1's turn
+            _ = _gameService.CreateStone(1, 4).Result;
+            _ = _gameService.CreateStone(8, 14).Result; // player 1's turn
+            var response = _gameService.CreateStone(1, 5).Result;
+
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Ok, Is.EqualTo(true));
+            Assert.That(response.Message, Is.EqualTo("Player 2 with White stone wins"));
             Assert.That(response.Result, Is.EqualTo(GlobalConstants.GameEnded));
         }
 
@@ -72,13 +92,15 @@ namespace GameGomoku.Tests
         }
 
         [Test]
-        [TestCase(1, 1, 1)]
-        [TestCase(2, 7, 2)]
-        [TestCase(1, 2, 3)]
-        [TestCase(2, 4, 8)]
-        [TestCase(1, 6, 2)]
-        [TestCase(2, 1, 8)]
-        public void ShouldSuccessWhenPlacingStoneWithValidMove(int playerId, int rowNumber, int columnNumber)
+        [TestCase(1, 1)]
+        [TestCase(7, 2)]
+        [TestCase(2, 3)]
+        [TestCase(4, 8)]
+        [TestCase(6, 2)]
+        [TestCase(1, 8)]
+        [TestCase(8, 2)]
+        [TestCase(9, 8)]
+        public void ShouldSuccessWhenPlacingStoneWithValidMove(int rowNumber, int columnNumber)
         {
             _ = _gameService.CreateBoard(15, 15, 1).Result;
 
@@ -101,6 +123,16 @@ namespace GameGomoku.Tests
             Assert.That(response, Is.Not.Null);
             Assert.That(response.Ok, Is.EqualTo(false));
             Assert.That(response.Message, Is.EqualTo(GlobalConstants.StoneAlreadyExists));
+            Assert.That(response.Result, Is.EqualTo(GlobalConstants.Invalid));
+        }
+
+        [Test]
+        public void ShouldFailWhenInvalidStartingPlayer()
+        {
+            var response = _gameService.CreateBoard(15, 15, 3).Result;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Ok, Is.EqualTo(false));
+            Assert.That(response.Message, Is.EqualTo(GlobalConstants.InvalidStartingPlayer));
             Assert.That(response.Result, Is.EqualTo(GlobalConstants.Invalid));
         }
 
